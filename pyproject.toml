@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "beijing-aqi-prediction"
+version = "0.1.0"
+description = "Production-ready pipeline for Beijing AQI prediction experiments."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "joblib",
+    "jupyter",
+    "matplotlib",
+    "numpy",
+    "openpyxl",
+    "pandas",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+beijing-aqi-train = "beijing_aqi.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

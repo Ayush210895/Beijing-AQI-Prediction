@@ -1,17 +1,18 @@
 # Beijing AQI Prediction
 
-Machine learning project for estimating Beijing air-quality index (AQI) values and AQI categories from pollutant and weather measurements.
+Production-ready machine learning pipeline for estimating Beijing air-quality index (AQI) values and AQI categories from pollutant and weather measurements.
 
-The notebook cleans hourly air-quality records, calculates pollutant-specific AQI components, explores pollution trends, and compares custom implementations of linear regression, logistic regression, and Naive Bayes.
+The original notebook is still included as an analysis artifact. The main project workflow now lives in a reusable Python package with separate modules for data loading, feature engineering, AQI calculations, model training, and command-line execution.
 
 ## Project Highlights
 
-- Combines station-level hourly pollution data into one analysis dataset.
+- Loads and combines station-level hourly pollution data into one modeling dataset.
 - Handles missing values with station/day median imputation and fallback zero fills.
 - Converts pollutant concentrations into AQI component indices for PM2.5, PM10, SO2, NO2, CO, and O3.
 - Creates AQI categories such as Good, Moderate, Unhealthy, Very Unhealthy, and Hazardous.
-- Visualizes AQI distributions, pollutant correlations, and time-based trends.
-- Implements machine learning models from scratch for regression and classification.
+- Trains reproducible baseline models for AQI regression and AQI category classification.
+- Saves model artifacts and metrics from a command-line training script.
+- Keeps the original notebook available for visual exploration and academic context.
 
 ## Repository Structure
 
@@ -19,9 +20,25 @@ The notebook cleans hourly air-quality records, calculates pollutant-specific AQ
 .
 +-- IE_7374_Machine_Learning_Project_Group9-1.ipynb  # Main analysis notebook
 +-- data/README.md                                   # Dataset download and placement notes
++-- pyproject.toml                                   # Package metadata and CLI entry point
 +-- requirements.txt                                 # Python dependencies
++-- scripts/train.py                                 # Local training wrapper
++-- src/beijing_aqi/                                 # Production source package
++-- tests/                                           # Lightweight test suite
 +-- README.md                                        # Project documentation
 ```
+
+## Production Package
+
+The `src/beijing_aqi` package separates the notebook into focused modules:
+
+- `aqi.py`: AQI breakpoint formulas, component indices, and category labels.
+- `data.py`: raw CSV loading, cleaning, gas unit conversion, rolling-window features, and final AQI feature frame creation.
+- `features.py`: model feature/target definitions.
+- `models.py`: scikit-learn training and evaluation helpers.
+- `cli.py`: command-line workflow for training models and writing outputs.
+
+This structure makes the project easier to test, reuse, and extend than a single notebook.
 
 ## Dataset
 
@@ -49,13 +66,13 @@ The notebook builds the modeling dataset by:
 
 ### Models
 
-The analysis compares:
+The production pipeline trains:
 
 - **Linear Regression** for predicting continuous AQI values.
 - **Logistic Regression** for predicting AQI categories.
-- **Naive Bayes** for multi-class AQI category prediction.
+- **Gaussian Naive Bayes** for multi-class AQI category prediction.
 
-The implementations are written directly in the notebook, including normalization, training loops, prediction, and evaluation logic.
+The original notebook also includes custom from-scratch implementations used for the classroom project.
 
 ## Current Results
 
@@ -72,9 +89,15 @@ These results are a baseline from the original academic project. A strong next s
 ### 1. Create an environment
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+Or install the package in editable mode:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ### 2. Download the dataset
@@ -99,7 +122,37 @@ For local runs, change it to:
 path = "data/PRSA_Data_20130301-20170228/"
 ```
 
-### 4. Start Jupyter
+### 4. Train models from the command line
+
+```bash
+PYTHONPATH=src python scripts/train.py \
+  --data-dir data/PRSA_Data_20130301-20170228 \
+  --output-dir reports
+```
+
+The command writes:
+
+- `reports/metrics.json`
+- `reports/models/linear_regression.joblib`
+- `reports/models/logistic_regression.joblib`
+- `reports/models/naive_bayes.joblib`
+
+For a faster smoke run, use:
+
+```bash
+PYTHONPATH=src python scripts/train.py \
+  --data-dir data/PRSA_Data_20130301-20170228 \
+  --output-dir reports \
+  --sample-size 10000
+```
+
+### 5. Run tests
+
+```bash
+pytest
+```
+
+### 6. Explore the original notebook
 
 ```bash
 jupyter notebook
@@ -115,8 +168,8 @@ The original final project report is available here:
 
 ## Future Improvements
 
-- Add a clean Python script or package version of the notebook workflow.
-- Add scikit-learn model baselines for reproducible comparison.
-- Save generated charts into a `reports/figures/` folder.
+- Add cross-validation and hyperparameter tuning.
+- Add model cards or experiment tracking for trained artifacts.
+- Save generated charts into a reproducible reporting workflow.
 - Add a small sample dataset for smoke testing.
 - Add automated notebook execution checks with GitHub Actions.

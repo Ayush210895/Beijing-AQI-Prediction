@@ -11,7 +11,7 @@ env/
 # Local data and generated artifacts
 data/*
 !data/README.md
-reports/figures/
+reports/
 *.log
 
 # OS/editor noise
