@@ -36,7 +36,7 @@ The `src/beijing_aqi` package separates the notebook into focused modules:
 - `aqi.py`: AQI breakpoint formulas, component indices, and category labels.
 - `data.py`: raw CSV loading, cleaning, gas unit conversion, rolling-window features, and final AQI feature frame creation.
 - `features.py`: model feature/target definitions.
-- `models.py`: scikit-learn training and evaluation helpers.
+- `models.py`: from-scratch model training and evaluation helpers using NumPy.
 - `cli.py`: command-line workflow for training models and writing outputs.
 
 This structure makes the project easier to test, reuse, and extend than a single notebook.
@@ -67,11 +67,11 @@ The notebook builds the modeling dataset by:
 
 ### Models
 
-The production pipeline trains:
+The production pipeline trains custom models implemented from first principles:
 
-- **Linear Regression** for predicting continuous AQI values.
-- **Logistic Regression** for predicting AQI categories.
-- **Gaussian Naive Bayes** for multi-class AQI category prediction.
+- **Linear Regression** with a closed-form normal-equation solution.
+- **Softmax Logistic Regression** with mini-batch gradient descent.
+- **Gaussian Naive Bayes** with class priors, means, and variances computed directly from the training data.
 
 The original notebook also includes custom from-scratch implementations used for the classroom project.
 
@@ -84,10 +84,10 @@ Full-data training results:
 | Model | Metric | Result |
 | --- | --- | --- |
 | Linear Regression | MAE | `37.77` |
-| Linear Regression | RMSE | `49.04` |
-| Linear Regression | R2 | `0.54` |
-| Logistic Regression | Accuracy | `0.48` |
-| Logistic Regression | Macro F1 | `0.33` |
+| Linear Regression | RMSE | `49.07` |
+| Linear Regression | R2 | `0.53` |
+| Softmax Logistic Regression | Accuracy | `0.47` |
+| Softmax Logistic Regression | Macro F1 | `0.27` |
 | Gaussian Naive Bayes | Accuracy | `0.43` |
 | Gaussian Naive Bayes | Macro F1 | `0.39` |
 
@@ -105,7 +105,7 @@ The original notebook outputs show the following representative baseline results
 - Logistic regression experiments: classification accuracy around `43%` to `47%`, depending on hyperparameters.
 - Naive Bayes experiments: classification accuracy around `43%`.
 
-The production results are consistent with the original academic project baseline. A strong next step would be adding cross-validation and stronger baselines such as Random Forest, Gradient Boosting, or XGBoost.
+The production results are consistent with the original academic project baseline. A strong next step would be tuning the custom optimization settings and adding cross-validation while keeping the model implementations from scratch.
 
 ## How to Run
 
@@ -191,7 +191,7 @@ pytest
 A faster 10,000-row training smoke test produced:
 
 - Linear regression: RMSE `48.32`, R2 `0.56`
-- Logistic regression: accuracy `0.47`, macro F1 `0.33`
+- Softmax logistic regression: accuracy `0.47`, macro F1 `0.29`
 - Gaussian Naive Bayes: accuracy `0.44`, macro F1 `0.40`
 
 Command used:
@@ -219,7 +219,7 @@ The original final project report is available here:
 
 ## Future Improvements
 
-- Add cross-validation and hyperparameter tuning.
+- Add cross-validation and hyperparameter tuning for the custom models.
 - Add model cards or experiment tracking for trained artifacts.
 - Save generated charts into a reproducible reporting workflow.
 - Add a small sample dataset for smoke testing.
