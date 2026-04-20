@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 
@@ -28,10 +29,12 @@ CLASSIFICATION_FEATURES = [
 
 
 def regression_dataset(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    dataset = frame[REGRESSION_FEATURES + ["AQI_calculated"]].dropna()
+    dataset = frame[REGRESSION_FEATURES + ["AQI_calculated"]]
+    dataset = dataset.replace([np.inf, -np.inf], pd.NA).dropna()
     return dataset[REGRESSION_FEATURES], dataset["AQI_calculated"]
 
 
 def classification_dataset(frame: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
-    dataset = frame[CLASSIFICATION_FEATURES + ["AQI_category"]].dropna()
+    dataset = frame[CLASSIFICATION_FEATURES + ["AQI_category"]]
+    dataset = dataset.replace([np.inf, -np.inf], pd.NA).dropna()
     return dataset[CLASSIFICATION_FEATURES], dataset["AQI_category"]
