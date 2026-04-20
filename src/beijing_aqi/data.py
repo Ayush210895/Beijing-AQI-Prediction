@@ -79,9 +79,19 @@ def clean_air_quality_data(raw: pd.DataFrame) -> pd.DataFrame:
     cleaned["Date"] = pd.to_datetime(cleaned[["year", "month", "day"]])
     cleaned = cleaned.drop_duplicates()
 
-    grouped = cleaned.groupby(["Date", "station"])
+    grouped_medians = cleaned.groupby(["Date", "station"])[MEDIAN_FILL_COLUMNS].transform(
+        "median"
+    )
     for column in MEDIAN_FILL_COLUMNS:
-        cleaned[column] = grouped[column].transform(lambda values: values.fillna(values.median()))
+        cleaned[column] = cleaned[column].fillna(grouped_medians[column])
+        fallback = cleaned[column].median()
+        if pd.isna(fallback):
+            fallback = 0
+        cleaned[column] = cleaned[column].fillna(fallback)
+
+    pressure_fallback = cleaned.loc[cleaned["PRES"] > 0, "PRES"].median()
+    if not pd.isna(pressure_fallback):
+        cleaned.loc[cleaned["PRES"] <= 0, "PRES"] = pressure_fallback
 
     for column in ZERO_FILL_COLUMNS:
         cleaned[column] = cleaned[column].fillna(0)
