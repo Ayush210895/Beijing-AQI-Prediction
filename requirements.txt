@@ -1,0 +1,14 @@
+pandas
+numpy
+matplotlib
+scipy
+seaborn
+tqdm
+openpyxl
+jupyter
+joblib
+pytest
+
+# The production pipeline does not use scikit-learn estimators.
+# Keep scikit-learn for running the original notebook unchanged.
+scikit-learn

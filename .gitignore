@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local data and generated artifacts
+data/*
+!data/README.md
+reports/
+*.log
+
+# OS/editor noise
+.DS_Store
+.vscode/
+.idea/
