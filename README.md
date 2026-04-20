@@ -22,6 +22,7 @@ The original notebook is still included as an analysis artifact. The main projec
 +-- data/README.md                                   # Dataset download and placement notes
 +-- pyproject.toml                                   # Package metadata and CLI entry point
 +-- requirements.txt                                 # Python dependencies
++-- scripts/download_data.py                         # Official UCI dataset downloader
 +-- scripts/train.py                                 # Local training wrapper
 +-- src/beijing_aqi/                                 # Production source package
 +-- tests/                                           # Lightweight test suite
@@ -102,11 +103,22 @@ pip install -e ".[dev]"
 
 ### 2. Download the dataset
 
-Download `PRSA2017_Data_20130301-20170228.zip` from UCI, unzip it, and place the extracted CSV files in a local folder such as:
+Download and extract the official UCI dataset:
+
+```bash
+python3 scripts/download_data.py
+```
+
+This creates:
 
 ```text
 data/PRSA_Data_20130301-20170228/
 ```
+
+The dataset is also available on the UCI page:
+
+- [Beijing Multi-Site Air Quality - UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/501/beijing%2Bmulti%2Bsite%2Bair%2Bquality%2Bdata)
+- Direct zip: `https://archive.ics.uci.edu/ml/machine-learning-databases/00501/PRSA2017_Data_20130301-20170228.zip`
 
 ### 3. Update the notebook data path
 
@@ -125,7 +137,7 @@ path = "data/PRSA_Data_20130301-20170228/"
 ### 4. Train models from the command line
 
 ```bash
-PYTHONPATH=src python scripts/train.py \
+PYTHONPATH=src python3 scripts/train.py \
   --data-dir data/PRSA_Data_20130301-20170228 \
   --output-dir reports
 ```
@@ -140,7 +152,7 @@ The command writes:
 For a faster smoke run, use:
 
 ```bash
-PYTHONPATH=src python scripts/train.py \
+PYTHONPATH=src python3 scripts/train.py \
   --data-dir data/PRSA_Data_20130301-20170228 \
   --output-dir reports \
   --sample-size 10000
@@ -150,6 +162,23 @@ PYTHONPATH=src python scripts/train.py \
 
 ```bash
 pytest
+```
+
+## Smoke-Test Results
+
+After downloading the official UCI dataset, a 10,000-row training smoke test produced:
+
+- Linear regression: RMSE `48.32`, R2 `0.56`
+- Logistic regression: accuracy `0.47`, macro F1 `0.33`
+- Gaussian Naive Bayes: accuracy `0.44`, macro F1 `0.40`
+
+Command used:
+
+```bash
+PYTHONPATH=src python3 scripts/train.py \
+  --data-dir data/PRSA_Data_20130301-20170228 \
+  --output-dir reports \
+  --sample-size 10000
 ```
 
 ### 6. Explore the original notebook
