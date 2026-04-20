@@ -4,6 +4,12 @@ Download the Beijing Multi-Site Air Quality dataset from UCI:
 
 https://archive.ics.uci.edu/dataset/501/beijing%2Bmulti%2Bsite%2Bair%2Bquality%2Bdata
 
+Or run the downloader from the project root:
+
+```bash
+python3 scripts/download_data.py
+```
+
 Use the file named:
 
 ```text
