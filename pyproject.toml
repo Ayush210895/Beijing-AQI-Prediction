@@ -15,7 +15,6 @@ dependencies = [
     "numpy",
     "openpyxl",
     "pandas",
-    "scikit-learn",
     "scipy",
     "seaborn",
     "tqdm",
