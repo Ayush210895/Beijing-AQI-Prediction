@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import warnings
 
 import joblib
 import numpy as np
@@ -69,8 +70,7 @@ def train_linear_regression(
             ("model", LinearRegression()),
         ]
     )
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
+    predictions = _fit_and_predict(model, X_train, y_train, X_test)
 
     model_dir = Path(model_dir)
     joblib.dump(model, model_dir / "linear_regression.joblib")
@@ -105,12 +105,12 @@ def train_logistic_regression(
                 LogisticRegression(
                     max_iter=config.logistic_max_iter,
                     random_state=config.random_state,
+                    solver="liblinear",
                 ),
             ),
         ]
     )
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
+    predictions = _fit_and_predict(model, X_train, y_train, X_test)
 
     model_dir = Path(model_dir)
     joblib.dump(model, model_dir / "logistic_regression.joblib")
@@ -137,8 +137,7 @@ def train_naive_bayes(
             ("model", GaussianNB()),
         ]
     )
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
+    predictions = _fit_and_predict(model, X_train, y_train, X_test)
 
     model_dir = Path(model_dir)
     joblib.dump(model, model_dir / "naive_bayes.joblib")
@@ -163,3 +162,15 @@ def _stratify_if_possible(y: pd.Series) -> pd.Series | None:
     if len(class_counts) > 1 and class_counts.min() >= 2:
         return y
     return None
+
+
+def _fit_and_predict(
+    model: Pipeline,
+    X_train: pd.DataFrame,
+    y_train: pd.Series,
+    X_test: pd.DataFrame,
+) -> np.ndarray:
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        model.fit(X_train, y_train)
+        return model.predict(X_test)
