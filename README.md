@@ -77,13 +77,35 @@ The original notebook also includes custom from-scratch implementations used for
 
 ## Current Results
 
-The saved notebook outputs show the following representative results:
+After downloading the official UCI dataset, the production pipeline was run on the full dataset of 420,684 model-ready rows.
+
+Full-data training results:
+
+| Model | Metric | Result |
+| --- | --- | --- |
+| Linear Regression | MAE | `37.77` |
+| Linear Regression | RMSE | `49.04` |
+| Linear Regression | R2 | `0.54` |
+| Logistic Regression | Accuracy | `0.48` |
+| Logistic Regression | Macro F1 | `0.33` |
+| Gaussian Naive Bayes | Accuracy | `0.43` |
+| Gaussian Naive Bayes | Macro F1 | `0.39` |
+
+Command used:
+
+```bash
+PYTHONPATH=src python3 scripts/train.py \
+  --data-dir data/PRSA_Data_20130301-20170228 \
+  --output-dir reports
+```
+
+The original notebook outputs show the following representative baseline results:
 
 - Linear regression closed-form solution: test RMSE around `49.30`.
 - Logistic regression experiments: classification accuracy around `43%` to `47%`, depending on hyperparameters.
 - Naive Bayes experiments: classification accuracy around `43%`.
 
-These results are a baseline from the original academic project. A strong next step would be comparing these custom models with scikit-learn baselines and adding cross-validation.
+The production results are consistent with the original academic project baseline. A strong next step would be adding cross-validation and stronger baselines such as Random Forest, Gradient Boosting, or XGBoost.
 
 ## How to Run
 
@@ -166,7 +188,7 @@ pytest
 
 ## Smoke-Test Results
 
-After downloading the official UCI dataset, a 10,000-row training smoke test produced:
+A faster 10,000-row training smoke test produced:
 
 - Linear regression: RMSE `48.32`, R2 `0.56`
 - Logistic regression: accuracy `0.47`, macro F1 `0.33`
