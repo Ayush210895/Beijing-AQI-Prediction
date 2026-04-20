@@ -22,6 +22,8 @@ from beijing_aqi.features import classification_dataset, regression_dataset
 
 @dataclass(frozen=True)
 class TrainingConfig:
+    """Hyperparameters shared by the custom model training routines."""
+
     test_size: float = 0.30
     random_state: int = 42
     logistic_max_iter: int = 300
@@ -56,6 +58,16 @@ def train_linear_regression(
     model_dir: str | Path,
     config: TrainingConfig,
 ) -> dict[str, float]:
+    """Fit multivariate linear regression with the normal equation.
+
+    The model estimates weights for y = Xw by minimizing squared error. After
+    standardizing features and adding a bias column, the closed-form solution is:
+
+        w = pinv(X.T @ X) @ X.T @ y
+
+    `pinv` is used instead of a direct inverse so the calculation still works
+    when features are correlated or the matrix is close to singular.
+    """
     X, y = regression_dataset(frame)
     X_train, X_test, y_train, y_test = _split_frame(X, y, config)
     X_train_scaled, X_test_scaled, mean, std = _standardize(X_train, X_test)
@@ -63,6 +75,7 @@ def train_linear_regression(
     X_train_design = _add_bias(X_train_scaled)
     X_test_design = _add_bias(X_test_scaled)
 
+    # Normal-equation solution for least squares, using pseudo-inverse for stability.
     weights = np.linalg.pinv(X_train_design.T @ X_train_design) @ X_train_design.T @ y_train
     predictions = X_test_design @ weights
 
@@ -83,6 +96,16 @@ def train_logistic_regression(
     model_dir: str | Path,
     config: TrainingConfig,
 ) -> dict[str, float]:
+    """Fit multiclass softmax logistic regression from scratch.
+
+    AQI category labels are encoded as integer classes, features are
+    standardized, and a bias column is added. Training uses mini-batch gradient
+    descent on the cross-entropy loss:
+
+        gradient = X.T @ (softmax(X @ W) - Y) / batch_size
+
+    A small L2 penalty is applied to non-bias weights.
+    """
     X, y = classification_dataset(frame)
     class_labels = _ordered_labels(y)
     class_to_index = {label: index for index, label in enumerate(class_labels)}
@@ -125,6 +148,16 @@ def train_naive_bayes(
     model_dir: str | Path,
     config: TrainingConfig,
 ) -> dict[str, float]:
+    """Fit Gaussian Naive Bayes from class summary statistics.
+
+    For each AQI class and each feature, the model stores the mean, variance,
+    and prior probability. Prediction selects the class with the largest log
+    posterior:
+
+        log P(class) + sum(log Normal(feature | class_mean, class_variance))
+
+    Log probabilities avoid multiplying many tiny density values.
+    """
     X, y = classification_dataset(frame)
     class_labels = _ordered_labels(y)
     class_to_index = {label: index for index, label in enumerate(class_labels)}
@@ -171,6 +204,7 @@ def _fit_softmax_regression(
     class_count: int,
     config: TrainingConfig,
 ) -> np.ndarray:
+    """Return softmax regression weights trained by mini-batch gradient descent."""
     rng = np.random.default_rng(config.random_state)
     weights = np.zeros((X.shape[1], class_count), dtype=float)
     y_one_hot = np.eye(class_count)[y]
@@ -181,8 +215,10 @@ def _fit_softmax_regression(
         X_batch = X[batch_indices]
         y_batch = y_one_hot[batch_indices]
 
+        # Each row of probabilities is the model's class distribution for one record.
         probabilities = _softmax(X_batch @ weights)
         gradient = X_batch.T @ (probabilities - y_batch) / batch_size
+        # Do not regularize the bias row at index 0.
         gradient[1:] += config.regularization * weights[1:]
         weights -= config.logistic_learning_rate * gradient
 
@@ -194,6 +230,7 @@ def _fit_gaussian_naive_bayes(
     y: np.ndarray,
     class_count: int,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Estimate per-class means, variances, and priors for Gaussian NB."""
     feature_count = X.shape[1]
     class_means = np.zeros((class_count, feature_count), dtype=float)
     class_variances = np.zeros((class_count, feature_count), dtype=float)
@@ -218,6 +255,7 @@ def _predict_gaussian_naive_bayes(
     class_variances: np.ndarray,
     priors: np.ndarray,
 ) -> np.ndarray:
+    """Predict classes using Gaussian log-posterior scores."""
     log_priors = np.log(priors)
     log_likelihoods = []
 
@@ -251,6 +289,7 @@ def _split_arrays(
     config: TrainingConfig,
     stratify: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Split arrays into train/test sets with optional manual stratification."""
     rng = np.random.default_rng(config.random_state)
     test_indices = _test_indices(y, config.test_size, rng, stratify)
     test_mask = np.zeros(len(y), dtype=bool)
@@ -290,6 +329,7 @@ def _standardize_arrays(
     X_train: np.ndarray,
     X_test: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Apply z-score normalization using training-set statistics only."""
     mean = X_train.mean(axis=0)
     std = X_train.std(axis=0)
     std = np.where(std == 0, 1.0, std)
@@ -297,10 +337,12 @@ def _standardize_arrays(
 
 
 def _add_bias(X: np.ndarray) -> np.ndarray:
+    """Add an intercept column so custom models can learn a bias term."""
     return np.column_stack([np.ones(X.shape[0]), X])
 
 
 def _softmax(scores: np.ndarray) -> np.ndarray:
+    """Convert class scores into probabilities with a numerically stable softmax."""
     shifted = scores - scores.max(axis=1, keepdims=True)
     exp_scores = np.exp(shifted)
     return exp_scores / exp_scores.sum(axis=1, keepdims=True)
@@ -314,6 +356,7 @@ def _ordered_labels(y: pd.Series) -> list[str]:
 
 
 def _regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+    """Calculate MAE, RMSE, and R2 without external metric helpers."""
     residuals = y_true - y_pred
     mse = np.mean(residuals**2)
     mae = np.mean(np.abs(residuals))
@@ -332,6 +375,7 @@ def _classification_metrics(
     y_pred: np.ndarray,
     class_count: int,
 ) -> dict[str, float]:
+    """Calculate accuracy and macro-averaged precision, recall, and F1."""
     accuracy = np.mean(y_true == y_pred)
     precisions = []
     recalls = []
